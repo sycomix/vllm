@@ -22,7 +22,8 @@ NVCC_FLAGS += [f"-D_GLIBCXX_USE_CXX11_ABI={ABI}"]
 
 if CUDA_HOME is None:
     raise RuntimeError(
-        f"Cannot find CUDA_HOME. CUDA must be available in order to build the package.")
+        "Cannot find CUDA_HOME. CUDA must be available in order to build the package."
+    )
 
 
 def get_nvcc_cuda_version(cuda_dir: str) -> Version:
@@ -30,12 +31,12 @@ def get_nvcc_cuda_version(cuda_dir: str) -> Version:
 
     Adapted from https://github.com/NVIDIA/apex/blob/8b7a1ff183741dd8f9b87e7bafd04cfde99cea28/setup.py
     """
-    nvcc_output = subprocess.check_output([cuda_dir + "/bin/nvcc", "-V"],
-                                          universal_newlines=True)
+    nvcc_output = subprocess.check_output(
+        [f"{cuda_dir}/bin/nvcc", "-V"], universal_newlines=True
+    )
     output = nvcc_output.split()
     release_idx = output.index("release") + 1
-    nvcc_cuda_version = parse(output[release_idx].split(",")[0])
-    return nvcc_cuda_version
+    return parse(output[release_idx].split(",")[0])
 
 
 # Collect the compute capabilities of all available GPUs.
@@ -70,16 +71,13 @@ if nvcc_cuda_version >= Version("11.2"):
     num_threads = min(os.cpu_count(), 8)
     NVCC_FLAGS += ["--threads", str(num_threads)]
 
-ext_modules = []
-
 # Cache operations.
 cache_extension = CUDAExtension(
     name="vllm.cache_ops",
     sources=["csrc/cache.cpp", "csrc/cache_kernels.cu"],
     extra_compile_args={"cxx": CXX_FLAGS, "nvcc": NVCC_FLAGS},
 )
-ext_modules.append(cache_extension)
-
+ext_modules = [cache_extension]
 # Attention kernels.
 attention_extension = CUDAExtension(
     name="vllm.attention_ops",
@@ -123,9 +121,9 @@ def find_version(filepath: str):
     Adapted from https://github.com/ray-project/ray/blob/0b190ee1160eeca9796bc091e07eaebf4c85b511/python/setup.py
     """
     with open(filepath) as fp:
-        version_match = re.search(
-            r"^__version__ = ['\"]([^'\"]*)['\"]", fp.read(), re.M)
-        if version_match:
+        if version_match := re.search(
+            r"^__version__ = ['\"]([^'\"]*)['\"]", fp.read(), re.M
+        ):
             return version_match.group(1)
         raise RuntimeError("Unable to find version string.")
 

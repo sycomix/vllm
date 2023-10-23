@@ -30,10 +30,7 @@ def run_copy_blocks(
                                 dtype=dtype,
                                 device='cuda')
         key_caches.append(key_cache)
-    cloned_key_caches = []
-    for key_cache in key_caches:
-        cloned_key_caches.append(key_cache.clone())
-
+    cloned_key_caches = [key_cache.clone() for key_cache in key_caches]
     value_cache_shape = (num_blocks, num_heads, head_size, block_size)
     value_caches = []
     for _ in range(num_layers):
@@ -41,10 +38,7 @@ def run_copy_blocks(
                                   dtype=dtype,
                                   device='cuda')
         value_caches.append(value_cache)
-    cloned_value_caches = []
-    for value_cache in value_caches:
-        cloned_value_caches.append(value_cache.clone())
-
+    cloned_value_caches = [value_cache.clone() for value_cache in value_caches]
     # Call the copy blocks kernel.
     cache_ops.copy_blocks(key_caches, value_caches, block_mapping)
 

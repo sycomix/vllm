@@ -53,9 +53,7 @@ class FalconLinear(nn.Linear):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         hidden_states = x @ self.weight.T
-        if self.bias is None:
-            return hidden_states
-        return hidden_states + self.bias
+        return hidden_states if self.bias is None else hidden_states + self.bias
 
 
 def _get_alibi_slopes(total_num_heads: int) -> torch.Tensor:
@@ -325,9 +323,7 @@ class FalconDecoderLayer(nn.Module):
             if mlp_bias is not None:
                 mlp_output += mlp_bias
 
-        output = mlp_output + residual
-
-        return output
+        return mlp_output + residual
 
 
 class FalconModel(nn.Module):
@@ -361,10 +357,7 @@ class FalconModel(nn.Module):
     ) -> torch.Tensor:
         hidden_states = self.word_embeddings(input_ids)
         for i in range(len(self.h)):
-            if cache_events is None:
-                cache_event = None
-            else:
-                cache_event = cache_events[i]
+            cache_event = None if cache_events is None else cache_events[i]
             layer = self.h[i]
             hidden_states = layer(
                 positions,
@@ -405,10 +398,7 @@ class FalconForCausalLM(nn.Module):
             input_metadata,
             cache_events,
         )
-        next_tokens = self.sampler(self.lm_head.weight, hidden_states,
-                                   input_metadata)
-
-        return next_tokens
+        return self.sampler(self.lm_head.weight, hidden_states, input_metadata)
 
     _column_parallel_weights = [
         "word_embeddings.weight", "lm_head.weight", "dense_h_to_4h.weight",

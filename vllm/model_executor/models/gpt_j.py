@@ -114,10 +114,7 @@ class GPTJBlock(nn.Module):
 
     def __init__(self, config: GPTJConfig):
         super().__init__()
-        if config.n_inner is None:
-            inner_dim = 4 * config.n_embd
-        else:
-            inner_dim = config.n_inner
+        inner_dim = 4 * config.n_embd if config.n_inner is None else config.n_inner
         self.ln_1 = nn.LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
         self.attn = GPTJAttention(config)
         self.mlp = GPTJMLP(inner_dim, config)
@@ -167,10 +164,7 @@ class GPTJModel(nn.Module):
     ) -> torch.Tensor:
         hidden_states = self.wte(input_ids)
         for i in range(len(self.h)):
-            if cache_events is None:
-                cache_event = None
-            else:
-                cache_event = cache_events[i]
+            cache_event = None if cache_events is None else cache_events[i]
             layer = self.h[i]
             hidden_states = layer(
                 position_ids,
@@ -206,9 +200,9 @@ class GPTJForCausalLM(nn.Module):
     ) -> Dict[int, SequenceOutputs]:
         hidden_states = self.transformer(input_ids, positions, kv_caches,
                                          input_metadata, cache_events)
-        next_tokens = self.sampler(self.lm_head.weight, hidden_states,
-                                   input_metadata, self.lm_head.bias)
-        return next_tokens
+        return self.sampler(
+            self.lm_head.weight, hidden_states, input_metadata, self.lm_head.bias
+        )
 
     _column_parallel_weights = [
         "wte.weight", "fc_in.weight", "fc_in.bias", "lm_head.weight",

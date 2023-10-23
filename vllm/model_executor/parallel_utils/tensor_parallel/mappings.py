@@ -39,9 +39,7 @@ def _split_along_last_dim(input_):
 
     # Note: torch.split does not create contiguous tensors by default.
     rank = get_tensor_model_parallel_rank()
-    output = input_list[rank].contiguous()
-
-    return output
+    return input_list[rank].contiguous()
 
 
 def _split_along_first_dim(input_):
@@ -61,9 +59,7 @@ def _split_along_first_dim(input_):
     rank = get_tensor_model_parallel_rank()
     dim_offset = rank * local_dim_size
 
-    output = input_[dim_offset:dim_offset+local_dim_size].contiguous()
-
-    return output
+    return input_[dim_offset:dim_offset+local_dim_size].contiguous()
 
 
 def _gather_along_last_dim(input_):
@@ -82,10 +78,7 @@ def _gather_along_last_dim(input_):
     tensor_list[rank] = input_
     torch.distributed.all_gather(tensor_list, input_, group=get_tensor_model_parallel_group())
 
-    # Note: torch.cat already creates a contiguous tensor.
-    output = torch.cat(tensor_list, dim=last_dim).contiguous()
-
-    return output
+    return torch.cat(tensor_list, dim=last_dim).contiguous()
 
 
 def _gather_along_first_dim(input_):

@@ -60,7 +60,7 @@ class PagedAttention(nn.Module):
         super().__init__()
         self.num_heads = num_heads
         self.head_size = head_size
-        self.scale = float(scale)
+        self.scale = scale
         self.attn_op = xops.fmha.cutlass.FwOp()
         self.num_kv_heads = num_heads if num_kv_heads is None else num_kv_heads
 

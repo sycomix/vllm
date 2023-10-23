@@ -195,9 +195,7 @@ class BloomBlock(nn.Module):
         else:
             residual = attention_output
 
-        # MLP.
-        output = self.mlp(layernorm_output) + residual
-        return output
+        return self.mlp(layernorm_output) + residual
 
 
 class BloomModel(nn.Module):
@@ -230,10 +228,7 @@ class BloomModel(nn.Module):
         hidden_states = self.word_embeddings(input_ids)
         hidden_states = self.word_embeddings_layernorm(hidden_states)
         for i in range(len(self.h)):
-            if cache_events is None:
-                cache_event = None
-            else:
-                cache_event = cache_events[i]
+            cache_event = None if cache_events is None else cache_events[i]
             layer = self.h[i]
             hidden_states = layer(
                 position_ids,
@@ -267,9 +262,7 @@ class BloomForCausalLM(nn.Module):
     ) -> Dict[int, SequenceOutputs]:
         hidden_states = self.transformer(input_ids, positions, kv_caches,
                                          input_metadata, cache_events)
-        next_tokens = self.sampler(self.lm_head_weight, hidden_states,
-                                   input_metadata)
-        return next_tokens
+        return self.sampler(self.lm_head_weight, hidden_states, input_metadata)
 
     _column_parallel_weights = [
         "word_embeddings.weight", "dense_h_to_4h.weight", "dense_h_to_4h.bias"
@@ -292,7 +285,7 @@ class BloomForCausalLM(nn.Module):
                 param = self.lm_head_weight
             else:
                 if not name.startswith("transformer."):
-                    name = "transformer." + name
+                    name = f"transformer.{name}"
                 param = state_dict[name]
 
             if "query_key_value" in name:

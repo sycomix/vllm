@@ -23,8 +23,7 @@ def ref_masked_attention(
     if attn_mask is not None:
         attn = attn + attn_mask
     attn = torch.softmax(attn, dim=-1)
-    out = torch.einsum('hqk,khd->qhd', attn, value)
-    return out
+    return torch.einsum('hqk,khd->qhd', attn, value)
 
 
 def ref_single_query_cached_kv_attention(
@@ -280,8 +279,7 @@ def run_multi_query_kv_attention(
     output = output.squeeze(0)
 
     cu_seq_lens = [0]
-    for seq_len in seq_lens:
-        cu_seq_lens.append(cu_seq_lens[-1] + seq_len)
+    cu_seq_lens.extend(cu_seq_lens[-1] + seq_len for seq_len in seq_lens)
     ref_output = ref_multi_query_kv_attention(
         cu_seq_lens,
         query,

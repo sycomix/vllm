@@ -212,10 +212,7 @@ class LlamaModel(nn.Module):
     ) -> torch.Tensor:
         hidden_states = self.embed_tokens(input_ids)
         for i in range(len(self.layers)):
-            if cache_events is None:
-                cache_event = None
-            else:
-                cache_event = cache_events[i]
+            cache_event = None if cache_events is None else cache_events[i]
             layer = self.layers[i]
             hidden_states = layer(
                 positions,
@@ -252,9 +249,7 @@ class LlamaForCausalLM(nn.Module):
     ) -> Dict[int, SequenceOutputs]:
         hidden_states = self.model(input_ids, positions, kv_caches,
                                    input_metadata, cache_events)
-        next_tokens = self.sampler(self.lm_head.weight, hidden_states,
-                                   input_metadata)
-        return next_tokens
+        return self.sampler(self.lm_head.weight, hidden_states, input_metadata)
 
     _column_parallel_weights = [
         "embed_tokens.weight", "lm_head.weight", "qkv_proj.weight",

@@ -187,10 +187,7 @@ class GPT2Model(nn.Module):
         hidden_states = inputs_embeds + position_embeds
 
         for i in range(len(self.h)):
-            if cache_events is None:
-                cache_event = None
-            else:
-                cache_event = cache_events[i]
+            cache_event = None if cache_events is None else cache_events[i]
             layer = self.h[i]
             hidden_states = layer(hidden_states, kv_caches[i], input_metadata,
                                   cache_event)
@@ -220,9 +217,7 @@ class GPT2LMHeadModel(nn.Module):
     ) -> Dict[int, SequenceOutputs]:
         hidden_states = self.transformer(input_ids, positions, kv_caches,
                                          input_metadata, cache_events)
-        next_tokens = self.sampler(self.lm_head_weight, hidden_states,
-                                   input_metadata)
-        return next_tokens
+        return self.sampler(self.lm_head_weight, hidden_states, input_metadata)
 
     _column_parallel_weights = ["wte.weight", "c_fc.weight", "c_fc.bias"]
     _row_parallel_weights = ["c_proj.weight"]
@@ -248,7 +243,7 @@ class GPT2LMHeadModel(nn.Module):
                 continue
 
             if not name.startswith("transformer."):
-                name = "transformer." + name
+                name = f"transformer.{name}"
 
             # The HF's GPT-2 implementation uses Conv1D instead of Linear.
             # Because of this, we need to transpose the weights.

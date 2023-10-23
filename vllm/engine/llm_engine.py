@@ -216,12 +216,12 @@ class LLMEngine:
         # Initialize the cluster.
         distributed_init_method, placement_group = initialize_cluster(
             parallel_config)
-        # Create the LLM engine.
-        engine = cls(*engine_configs,
-                     distributed_init_method,
-                     placement_group,
-                     log_stats=not engine_args.disable_log_stats)
-        return engine
+        return cls(
+            *engine_configs,
+            distributed_init_method,
+            placement_group,
+            log_stats=not engine_args.disable_log_stats
+        )
 
     def add_request(
         self,
@@ -445,12 +445,10 @@ class LLMEngine:
                     self.scheduler.free_seq(
                         seq, SequenceStatus.FINISHED_LENGTH_CAPPED)
                     continue
-                # Check if the sequence has generated the EOS token.
                 if not sampling_params.ignore_eos:
                     if seq.get_last_token_id() == self.tokenizer.eos_token_id:
                         self.scheduler.free_seq(
                             seq, SequenceStatus.FINISHED_STOPPED)
-                        continue
 
     def _run_workers(
         self,

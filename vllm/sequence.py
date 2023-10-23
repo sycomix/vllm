@@ -29,16 +29,17 @@ class SequenceStatus(enum.Enum):
     @staticmethod
     def get_finished_reason(status: "SequenceStatus") -> Union[str, None]:
         if status == SequenceStatus.FINISHED_STOPPED:
-            finish_reason = "stop"
-        elif status == SequenceStatus.FINISHED_LENGTH_CAPPED:
-            finish_reason = "length"
+            return "stop"
+        elif (
+            status == SequenceStatus.FINISHED_LENGTH_CAPPED
+            or status != SequenceStatus.FINISHED_ABORTED
+            and status == SequenceStatus.FINISHED_IGNORED
+        ):
+            return "length"
         elif status == SequenceStatus.FINISHED_ABORTED:
-            finish_reason = "abort"
-        elif status == SequenceStatus.FINISHED_IGNORED:
-            finish_reason = "length"
+            return "abort"
         else:
-            finish_reason = None
-        return finish_reason
+            return None
 
 
 class SequenceData:

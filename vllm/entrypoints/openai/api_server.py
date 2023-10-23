@@ -61,11 +61,10 @@ async def validation_exception_handler(request, exc):  # pylint: disable=unused-
 async def check_model(request) -> Optional[JSONResponse]:
     if request.model == served_model:
         return
-    ret = create_error_response(
+    return create_error_response(
         HTTPStatus.NOT_FOUND,
         f"The model `{request.model}` does not exist.",
     )
-    return ret
 
 
 async def get_gen_prompt(request) -> str:
@@ -95,24 +94,21 @@ async def get_gen_prompt(request) -> str:
     )
 
     if isinstance(request.messages, str):
-        prompt = request.messages
-    else:
-        for message in request.messages:
-            msg_role = message["role"]
-            if msg_role == "system":
-                conv.system_message = message["content"]
-            elif msg_role == "user":
-                conv.append_message(conv.roles[0], message["content"])
-            elif msg_role == "assistant":
-                conv.append_message(conv.roles[1], message["content"])
-            else:
-                raise ValueError(f"Unknown role: {msg_role}")
+        return request.messages
+    for message in request.messages:
+        msg_role = message["role"]
+        if msg_role == "system":
+            conv.system_message = message["content"]
+        elif msg_role == "user":
+            conv.append_message(conv.roles[0], message["content"])
+        elif msg_role == "assistant":
+            conv.append_message(conv.roles[1], message["content"])
+        else:
+            raise ValueError(f"Unknown role: {msg_role}")
 
-        # Add a blank message for the assistant.
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
-
-    return prompt
+    # Add a blank message for the assistant.
+    conv.append_message(conv.roles[1], None)
+    return conv.get_prompt()
 
 
 async def check_length(
@@ -120,13 +116,10 @@ async def check_length(
     prompt: Optional[str] = None,
     prompt_ids: Optional[List[int]] = None
 ) -> Tuple[List[int], Optional[JSONResponse]]:
-    assert (not (prompt is None and prompt_ids is None)
-            and not (prompt is not None and prompt_ids is not None)
-            ), "Either prompt or prompt_ids should be provided."
-    if prompt_ids is not None:
-        input_ids = prompt_ids
-    else:
-        input_ids = tokenizer(prompt).input_ids
+    assert (prompt is not None or prompt_ids is not None) and (
+        prompt is None or prompt_ids is None
+    ), "Either prompt or prompt_ids should be provided."
+    input_ids = tokenizer(prompt).input_ids if prompt_ids is None else prompt_ids
     token_num = len(input_ids)
 
     if token_num + request.max_tokens > max_model_len:

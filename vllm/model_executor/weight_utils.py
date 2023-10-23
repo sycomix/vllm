@@ -74,8 +74,7 @@ def hf_model_weights_iterator(
     else:
         for bin_file in hf_bin_files:
             state = torch.load(bin_file, map_location="cpu")
-            for name, param in state.items():
-                yield name, param
+            yield from state.items()
 
 
 def load_tensor_parallel_weights(

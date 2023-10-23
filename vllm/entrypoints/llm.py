@@ -116,16 +116,10 @@ class LLM:
             sampling_params = SamplingParams()
 
         # Add requests to the engine.
-        if prompts is not None:
-            num_requests = len(prompts)
-        else:
-            num_requests = len(prompt_token_ids)
+        num_requests = len(prompts) if prompts is not None else len(prompt_token_ids)
         for i in range(num_requests):
             prompt = prompts[i] if prompts is not None else None
-            if prompt_token_ids is None:
-                token_ids = None
-            else:
-                token_ids = prompt_token_ids[i]
+            token_ids = None if prompt_token_ids is None else prompt_token_ids[i]
             self._add_request(prompt, sampling_params, token_ids)
         return self._run_engine(use_tqdm)
 
@@ -155,8 +149,4 @@ class LLM:
                         pbar.update(1)
         if use_tqdm:
             pbar.close()
-        # Sort the outputs by request ID.
-        # This is necessary because some requests may be finished earlier than
-        # its previous requests.
-        outputs = sorted(outputs, key=lambda x: int(x.request_id))
-        return outputs
+        return sorted(outputs, key=lambda x: int(x.request_id))

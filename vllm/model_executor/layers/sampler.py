@@ -165,9 +165,9 @@ def _apply_penalties(
     if not indices:
         return logits
 
-    bin_counts = []
-    for i in indices:
-        bin_counts.append(np.bincount(output_tokens[i], minlength=vocab_size))
+    bin_counts = [
+        np.bincount(output_tokens[i], minlength=vocab_size) for i in indices
+    ]
     bin_counts = np.stack(bin_counts, axis=0)
     bin_counts = torch.from_numpy(bin_counts).to(dtype=logits.dtype,
                                                  device=logits.device)
@@ -277,9 +277,7 @@ def _get_topk_logprobs(
         topk_logprobs = topk_logprobs.tolist()
         topk_ids = topk_ids.tolist()
 
-    token_to_logprob: Dict[int, float] = {}
-    for token_id, logprob in zip(topk_ids, topk_logprobs):
-        token_to_logprob[token_id] = logprob
+    token_to_logprob: Dict[int, float] = dict(zip(topk_ids, topk_logprobs))
     return token_to_logprob
 
 
@@ -413,12 +411,12 @@ def _sample(
             parent_seq_ids, next_token_ids = _sample_from_generation_tokens(
                 seq_ids, prob, logprob, seq_logprobs, sampling_params)
 
-            # Get top-k log probabilities for the next tokens.
-            next_logprobs: Dict[int, Dict[int, float]] = {}
-            for j, seq_id in enumerate(seq_ids):
-                next_logprobs[seq_id] = _get_topk_logprobs(
-                    logprob[j], sampling_params.logprobs)
-
+            next_logprobs: Dict[int, Dict[int, float]] = {
+                seq_id: _get_topk_logprobs(
+                    logprob[j], sampling_params.logprobs
+                )
+                for j, seq_id in enumerate(seq_ids)
+            }
             # Build the output.
             for seq_id, parent_seq_id, next_token_id in zip(
                     seq_ids, parent_seq_ids, next_token_ids):

@@ -45,20 +45,19 @@ def get_tokenizer(
             "tokenizer.")
         raise RuntimeError(err_msg) from e
     except ValueError as e:
-        # If the error pertains to the tokenizer class not existing or not
-        # currently being imported, suggest using the --trust-remote-code flag.
-        if (not trust_remote_code and
-            ("does not exist or is not currently imported." in str(e)
-             or "requires you to execute the tokenizer file" in str(e))):
-            err_msg = (
-                "Failed to load the tokenizer. If the tokenizer is a custom "
-                "tokenizer not yet available in the HuggingFace transformers "
-                "library, consider setting `trust_remote_code=True` in LLM "
-                "or using the `--trust-remote-code` flag in the CLI.")
-            raise RuntimeError(err_msg) from e
-        else:
+        if (
+            trust_remote_code
+            or "does not exist or is not currently imported." not in str(e)
+            and "requires you to execute the tokenizer file" not in str(e)
+        ):
             raise e
 
+        err_msg = (
+            "Failed to load the tokenizer. If the tokenizer is a custom "
+            "tokenizer not yet available in the HuggingFace transformers "
+            "library, consider setting `trust_remote_code=True` in LLM "
+            "or using the `--trust-remote-code` flag in the CLI.")
+        raise RuntimeError(err_msg) from e
     if not isinstance(tokenizer, PreTrainedTokenizerFast):
         logger.warning(
             "Using a slow tokenizer. This might cause a significant "
